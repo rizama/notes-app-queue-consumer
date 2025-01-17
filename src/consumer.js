@@ -2,7 +2,7 @@ require('dotenv').config();
 const amqp = require('amqplib');
 const NotesService = require('./NotesService');
 const MailSender = require('./MailSender');
-const Listener = require('./Listener');
+const Listener = require('./listener');
 
 const init = async () => {
     const notesService = new NotesService();
@@ -12,12 +12,9 @@ const init = async () => {
     const connection = await amqp.connect(process.env.RABBITMQ_SERVER);
     const channel = await connection.createChannel();
 
-    const queeuName = 'export:notes';
+    await channel.assertQueue('export:notes', { durable: true });
 
-    await channel.assertQueue(queeuName, {
-        durable: true,
-    });
-
-    channel.consume(queeuName, listener.listen, { noAck: true });
+    channel.consume('export:notes', listener.listen, { noAck: true });
 };
+
 init();
